@@ -38,11 +38,11 @@ class AmazonSpider(scrapy.Spider):
     			asin_lists.insert(len(asin_lists), row[0])
     			name_lists.insert(len(name_lists), row[1])
 
-    	time.sleep(1)
+    	time.sleep(5)
 
     	self.driver.get(response.url)
 
-    	time.sleep(1)
+    	time.sleep(5)
 
     	amazon_url = "http://www.amazon.com/"
     	asin_index = 0
@@ -62,52 +62,62 @@ class AmazonSpider(scrapy.Spider):
     			my_item['am_name'] = self.driver.find_element_by_xpath("/html/body/div[1]/div[2]/div/div[3]/div[2]/div/div[4]/div[1]/div/ul/li/div/div/div/div[2]/div[1]/div[1]/a/h2").text.encode("utf-8")
     			my_item['am_stock'] = 1
     			my_item['am_price'] = self.driver.find_element_by_xpath("/html/body/div[1]/div[2]/div/div[3]/div[2]/div/div[4]/div[1]/div/ul/li/div/div/div/div[2]/div[2]/div[1]/div/div/a/span[2]").text.replace('$','').encode("utf-8")
-    			yield my_item
-    			time.sleep(1)
+    			
 
     			products_list = self.driver.find_element_by_xpath("/html/body/div[1]/div[2]/div/div[3]/div[2]/div/div[4]/div[1]/div/ul/li/div/div/div/div[2]/div[2]/div[1]/div/div/a")
     			products_list.click()
     			
+    			#yield my_item
     			time.sleep(1)
 
-    			my_item = AmazonScrapyItem()
+    			#my_item = AmazonScrapyItem()
 		        source = self.driver.page_source.encode("utf8")
 		        tree = etree.HTML(source)
 		        items = tree.xpath("//div[contains(@class, 'a-row a-spacing-mini olpOffer')]")
 
+		        am_condition = ''
 		        for item in items:
 
-		        	my_item['am_asin'] = ''
-	    			my_item['am_name'] = ''
-	    			my_item['am_stock'] = ''
-	    			my_item['am_price'] = ''
-		        	my_item['am_price_shipping'] = str(item.xpath("div[1]/span/text()") ).replace('[', '').replace(']','').replace("'", '').replace('$','').strip()
+		      #   	my_item['am_asin'] = ''
+	    			# my_item['am_name'] = ''
+	    			# my_item['am_stock'] = ''
+	    			# my_item['am_price'] = ''
+		      #   	my_item['am_price_shipping'] = str(item.xpath("div[1]/span/text()") ).replace('[', '').replace(']','').replace("'", '').replace('$','').strip()
 
-		        	my_item['am_condition'] = str(item.xpath("div[2]/div/span/text()") ).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
-		        	
-		        	deliverys = item.xpath("div[3]/ul/li")
-		        	my_item['am_delivery'] = ''
-		        	for delivery in deliverys:
-		        		#my_item['am_delivery'] += str(delivery.xpath("span/text()") ).replace('[', '').replace(']','').replace("'", '').replace("\\n",'').strip()
-		        		delsplit = str(delivery.xpath("span/text()")).split(",")
+		      #   	my_item['am_condition'] = str(item.xpath("div[2]/div/span/text()") ).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+		        	am_condition = str(item.xpath("div[2]/div/span/text()") ).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+		        	if am_condition != 'New':
+		        		break
 
-		        		del_index = 0
-		        		print 'ccccccccccccccccccccccccccccccccccccccc'
-		        		print len(delsplit)
-		        		print str(delivery.xpath("span/text()"))
-		        		while del_index < (len(delsplit)-1):
-		        			my_item['am_delivery'] += str(delsplit[del_index]).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+		        if am_condition == 'New':
+		        	my_item['am_stock'] = 0
+		        	my_item['am_price'] = -1
 
-		        			if len(delsplit) == 2:
-		        				my_item['am_delivery'] += str(delivery.xpath("span/a/text()")).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
-		        			else:
-		        				my_item['am_delivery'] += str(delivery.xpath("span/a[" + str(del_index + 1) + "]/text()")).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
-		        			del_index += 1
-		        		my_item['am_delivery'] += str(delsplit[del_index]).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
-		        		print 'dddddddddddddddddddddddddddddddddddddddd'
+		        yield my_item
+    			time.sleep(1)
+		      #   	deliverys = item.xpath("div[3]/ul/li")
+		      #   	my_item['am_delivery'] = ''
+		      #   	for delivery in deliverys:
+		      #   		#my_item['am_delivery'] += str(delivery.xpath("span/text()") ).replace('[', '').replace(']','').replace("'", '').replace("\\n",'').strip()
+		      #   		delsplit = str(delivery.xpath("span/text()")).split(",")
 
-		        	yield my_item
-    				time.sleep(1)
+		      #   		del_index = 0
+		      #   		print 'ccccccccccccccccccccccccccccccccccccccc'
+		      #   		print len(delsplit)
+		      #   		print str(delivery.xpath("span/text()"))
+		      #   		while del_index < (len(delsplit)-1):
+		      #   			my_item['am_delivery'] += str(delsplit[del_index]).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+
+		      #   			if len(delsplit) == 2:
+		      #   				my_item['am_delivery'] += str(delivery.xpath("span/a/text()")).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+		      #   			else:
+		      #   				my_item['am_delivery'] += str(delivery.xpath("span/a[" + str(del_index + 1) + "]/text()")).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+		      #   			del_index += 1
+		      #   		my_item['am_delivery'] += str(delsplit[del_index]).replace('[', '').replace(']','').replace("'", '').replace('\n','').replace("\\n",'').replace('$','').strip()
+		      #   		print 'dddddddddddddddddddddddddddddddddddddddd'
+
+		      #   	yield my_item
+    				# time.sleep(1)
 
     		except:
     			print 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
